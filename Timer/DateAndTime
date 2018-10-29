@@ -1,0 +1,57 @@
+-- 07.04.2018 08:56:28 AR V1.0a
+
+block.setSize(101, 151)
+
+generic = {
+  parameter = {
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(9)
+    block.setOutputPinName(1, 'year')
+    block.setOutputPinName(2, 'month')
+    block.setOutputPinName(3, 'day')
+    block.setOutputPinName(4, 'yday')
+    block.setOutputPinName(5, 'wday')
+    block.setOutputPinName(6, 'hour')
+    block.setOutputPinName(7, 'min')
+    block.setOutputPinName(8, 'sec')
+    block.setOutputPinName(9, 'isdst')
+    block.setOutputPinTypeRestrains(9, 'boolean')
+    block.modifyFlags('SupressStartFunctionCall', true)
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Clock', 'Output the current sim time')
+    gui.setSize()
+  end,
+
+  apply = function(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, '', 'draw.line(px(50), py(15), px(50), py(50), px(85), py(50))')
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        return {
+
+          step = function()
+            local t = os.date('*t')
+            return t.year , t.month , t.day , t.yday , t.wday , t.hour , t.min , t.sec , t.isdst
+          end,
+
+        }
+      ]==]
+    return source
+  end,
+
+}
+

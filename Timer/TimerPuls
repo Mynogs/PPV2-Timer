@@ -1,0 +1,66 @@
+-- V1.0a AR
+-- 30.12.2016 16:00:31 AR V1.0b
+
+generic = {
+  parameter = {
+  },
+
+  init = function(self)
+    block.setInputsPinCount(2)
+    block.setInputPinName(1, 'in')
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setInputPinName(2, 'pt')
+    block.setOutputsPinCount(2)
+    block.setOutputPinName(1, 'q')
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.setOutputPinName(2, 'et')
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'TP', 'IEC61131 TP (timer puls)')
+    gui.setSize()
+  end,
+
+  apply = function(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'TP'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.timerS = 0.0
+          block.q = false
+        end
+
+        block.step = function(a, timeS)
+          if a and not block.run then
+            block.q = true
+            block.timerS = 0.0
+          end
+          if block.run then
+            block.timerS = block.timerS + block.parent.ellapsedS
+            block.q = block.timerS < timeS
+          end
+          if not a and not block.q then
+            block.timerS = 0.0
+          end
+          return block.q, math.min(block.timerS, timeS)
+        end
+
+        return block
+      ]==]
+    return source
+  end,
+
+}
+

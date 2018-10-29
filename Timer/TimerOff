@@ -1,0 +1,65 @@
+-- 07.04.2018 17:12:29 AR V1.0a
+
+generic = {
+  parameter = {
+  },
+
+  init = function(self)
+    block.setInputsPinCount(2)
+    block.setInputPinName(1, 'in')
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setInputPinName(2, 'pt')
+    block.setOutputsPinCount(2)
+    block.setOutputPinName(1, 'q')
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.setOutputPinName(2, 'et')
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'TOff', 'IEC61131 TOFF')
+    gui.setSize()
+  end,
+
+  apply = function(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'TOff'")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.timerS = 0.0
+        end
+
+        block.step = function(a, timeS)
+          block.timerS = a and 0.0 or (block.timerS + block.parent.ellapsedS)
+          return block.timerS <= timeS, math.min(block.timerS, timeS)
+        end
+
+        return block
+      ]==]
+    return source
+  end,
+
+}
+
+
+
+
+
+
+
+
+
+
+
+

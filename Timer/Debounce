@@ -1,0 +1,179 @@
+-- 01.06.2018 07:30:44 AR V1.0a
+
+generic = {
+  parameter = {
+    initQ = false,
+    setDelayS = 0,
+    resetDelayS = 0,
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(1)
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Debounce', [[
+If input is true output is set to true after set delay.
+If input is false output is set to false after reset delay.
+    ]])
+    gui.add('Edit', 'EditSetDelay', 'Set delay  (0: no delay, -1: never set) [s]', {Left = 260})
+    gui.add('Edit', 'EditResetDelay', 'Reset delay  (0: no delay, -1: never reset) [s]', {Left = 260})
+    gui.add('CheckBox', 'CheckBox', 'Inital output is \'true\'', {Width = 200})
+
+    gui.set('EditSetDelay', 'Number', self.parameter.setDelayS)
+    gui.set('EditResetDelay', 'Number', self.parameter.resetDelayS)
+    gui.set('CheckBox', 'Checked', self.parameter.initQ)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.setDelayS = gui.get('EditSetDelay', 'Number')
+    self.parameter.resetDelayS = gui.get('EditResetDelay', 'Number')
+    self.parameter.initQ = gui.get('CheckBox', 'Checked')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "", [[
+      draw.setColorA(0, 0, 0)
+      draw.line(px(30), py(45), px(40), py(45), px(40), py(30), px(50), py(30), px(50), py(45), px(70), py(45))
+      draw.line(px(30), py(70), px(45), py(70), px(45), py(55), px(60), py(55), px(60), py(70), px(70), py(70))
+    ]])
+  end,
+
+  generate = function(self)
+    local source =
+[==[
+local block = {}
+
+block.start = function()
+START
+end
+
+block.step = function(a)
+STEP
+end
+
+return block
+]==]
+
+    local start = ''
+    local step = ''
+
+--------------------------------------------------------------------------------
+-- Delay
+--------------------------------------------------------------------------------
+
+    if self.parameter.setDelayS > 0.0 or self.parameter.resetDelayS > 0.0 then
+      step = step .. '\n' ..
+[==[
+  if a ~= block.a then
+    block.timeS = 0
+    block.a = a
+  end
+]==]
+      start = start .. '\n' ..
+[==[
+  block.timeS = 0
+  block.q = INITQ
+]==]
+    end
+
+--------------------------------------------------------------------------------
+-- Set
+--------------------------------------------------------------------------------
+
+      step = step ..
+[==[
+  if a then
+]==]
+
+    if self.parameter.setDelayS == 0.0 then
+      step = step ..
+[==[
+    block.q = true
+]==]
+    elseif self.parameter.setDelayS > 0.0 then
+      step = step ..
+[==[
+    if block.timeS >= SETDELAY then
+      block.q = true
+    end
+]==]
+    end
+
+--------------------------------------------------------------------------------
+-- Reset
+--------------------------------------------------------------------------------
+
+      step = step ..
+[==[
+  else
+]==]
+
+    if self.parameter.resetDelayS == 0.0 then
+      step = step ..
+[==[
+    block.q = false
+]==]
+    elseif self.parameter.resetDelayS > 0.0 then
+      step = step ..
+[==[
+    if block.timeS >= RESETDELAY then
+      block.q = false
+    end
+]==]
+
+    end
+
+      step = step ..
+[==[
+  end
+]==]
+
+--------------------------------------------------------------------------------
+-- Server timer
+--------------------------------------------------------------------------------
+
+    if self.parameter.setDelayS > 0.0 or self.parameter.resetDelayS > 0.0 then
+      step = step .. '\n' ..
+[==[
+  block.timeS = block.timeS + block.parent.ellapsedS
+]==]
+    end
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+      step = step ..
+[==[
+  return block.q
+]==]
+
+--------------------------------------------------------------------------------
+--
+--------------------------------------------------------------------------------
+
+    local replaces1 = {
+      ['START'] = start,
+      ['STEP'] = step,
+    }
+    source = string.gsub(source, '%a+', replaces1)
+    local replaces2 = {
+      ['INITQ'] = self.parameter.initQ and 'true' or 'false',
+      ['SETDELAY'] = self.parameter.setDelayS,
+      ['RESETDELAY'] = self.parameter.resetDelayS,
+    }
+    return string.gsub(source, '%a+', replaces2)
+  end,
+
+}
+
+

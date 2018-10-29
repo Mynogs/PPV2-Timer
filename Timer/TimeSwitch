@@ -1,0 +1,77 @@
+-- 15.12.2017 11:37:56 AR V1.0
+
+generic = {
+  parameter = {
+    on = {1 << 12, 1 << 12, 1 << 12, 1 << 12}
+  },
+
+  init = function(self)
+    block.setOutputsPinCount(1)
+    block.setInputsPinCount(0)
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+  end,
+
+  open = function(self)
+    --gui.updateBegin()
+    gui.add('Info', 'Info', 'Time switch', 'A 24 houre timeswitch with 15 minutes resolution')
+    for h = 0, 23 do
+      local top = 60 + h * 16
+      gui.add('CheckBox', 'CheckBox' .. h .. '_1', string.format('%02d:00', h), {Left = 50, Top = top, Width = 52, Alignment = 'taLeftJustify', Checked = (self.parameter.on[1] & (1 << h)) ~= 0})
+      gui.add('CheckBox', 'CheckBox' .. h .. '_2', ':15', {Left = 115, Top = top, Width = 40, Alignment = 'taLeftJustify', Checked = (self.parameter.on[2] & (1 << h)) ~= 0})
+      gui.add('CheckBox', 'CheckBox' .. h .. '_3', ':30', {Left = 170, Top = top, Width = 40, Alignment = 'taLeftJustify', Checked = (self.parameter.on[3] & (1 << h)) ~= 0})
+      gui.add('CheckBox', 'CheckBox' .. h .. '_4', ':45', {Left = 225, Top = top, Width = 40, Alignment = 'taLeftJustify', Checked = (self.parameter.on[4] & (1 << h)) ~= 0})
+    end
+    --gui.updateEnd()
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.on = {0, 0, 0, 0}
+    for h = 0, 23 do
+      self.parameter.on[1] = self.parameter.on[1] | (gui.get('CheckBox' .. h .. '_1', 'Checked') and (1 << h) or 0)
+      self.parameter.on[2] = self.parameter.on[2] | (gui.get('CheckBox' .. h .. '_2', 'Checked') and (1 << h) or 0)
+      self.parameter.on[3] = self.parameter.on[3] | (gui.get('CheckBox' .. h .. '_3', 'Checked') and (1 << h) or 0)
+      self.parameter.on[4] = self.parameter.on[4] | (gui.get('CheckBox' .. h .. '_4', 'Checked') and (1 << h) or 0)
+    end
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(
+      0x50,
+      '',
+      [[
+        draw.circle(px(50), py(50), h > w and px(45) or py(45))
+        draw.circle(px(50), py(50), h > w and px(37) or py(37))
+        draw.line(px(50), py(20), px(50), py(50))
+      ]]
+    )
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.on = {ON}
+        end
+
+        block.step = function()
+          local t = os.date('*t')
+          return block.on[t.min // 15 + 1] & (1 << t.hour) ~= 0
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['ON'] = table.concat(self.parameter.on, ', '),
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
